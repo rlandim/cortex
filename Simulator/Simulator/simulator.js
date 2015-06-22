@@ -332,8 +332,8 @@ Vehicle.prototype.Update = function (delta, context) {
 
     for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
 
-        var radian = (angle + 90) * (Math.PI / 180) - Vector2D.Radian(this.Direction);
-        var ray = new Line(center, new Vector2D((Math.sin(radian) * this.RadarRadius) + center.X, (Math.cos(radian) * this.RadarRadius) + center.Y));
+        var radian = (angle) * (Math.PI / 180) - Vector2D.Radian(this.Direction);
+        var ray = new Line(center, new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y));
 
         var intersect = null;
         for (var segIndex = 0; segIndex < segments.length; segIndex++) {
@@ -363,6 +363,19 @@ Vehicle.prototype.Update = function (delta, context) {
             context.lineTo(ray.End.X, ray.End.Y);
             context.strokeStyle = 'rgba(0,0,0,0.1)';
         }
+
+        if (angle == -this.RadarRange) {
+            //Start - Blue
+            console.log("Start", angle);
+            context.strokeStyle = 'rgba(0,0,255,1)';
+        }
+
+        if (angle == this.RadarRange) {
+            //End - Green 
+            console.log("End", angle);
+            context.strokeStyle = 'rgba(0,255,0,1)';
+        }
+
 
         context.stroke();
         context.closePath();
