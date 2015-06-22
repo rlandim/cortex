@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Car simulator</title>
+    <link href="common.css" rel="stylesheet" />
+    <script src="jquery.min.js"></script>
+    <script src="fpsmeter.min.js"></script>
+    <script src="simulator.js"></script>
+</head>
+<body>
+    
+    <input type="button" value="Start" onclick="world.Start();" />
+    <input type="button" value="Pause" onclick="world.Pause();" />
+    
+    <input id="debug" type="checkbox" />Debug 
+
+    <select id="elements">
+        
+    </select>
+    <input type="button" value="Remove" onclick="RemoveVehicle(); " />
+
+    <div id="meter"> </div>
+    <div id="canvas_container">
+    </div>
+    
+</body>
+</html>

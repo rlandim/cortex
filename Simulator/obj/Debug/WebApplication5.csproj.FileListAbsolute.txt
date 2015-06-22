@@ -1,0 +1,6 @@
+D:\Descartavel\WebApplication5\WebApplication5\bin\WebApplication5.dll.config
+D:\Descartavel\WebApplication5\WebApplication5\bin\WebApplication5.dll
+D:\Descartavel\WebApplication5\WebApplication5\bin\WebApplication5.pdb
+D:\Descartavel\WebApplication5\WebApplication5\obj\Debug\WebApplication5.dll
+D:\Descartavel\WebApplication5\WebApplication5\obj\Debug\WebApplication5.pdb
+D:\Descartavel\WebApplication5\WebApplication5\obj\Debug\WebApplication5.csprojResolveAssemblyReference.cache
