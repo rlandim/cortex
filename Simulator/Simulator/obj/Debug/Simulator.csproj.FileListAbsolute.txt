@@ -1,0 +1,12 @@
+D:\Descartavel\WebApplication5\Simulator\bin\WebApplication5.dll.config
+D:\Descartavel\WebApplication5\Simulator\bin\WebApplication5.dll
+D:\Descartavel\WebApplication5\Simulator\bin\WebApplication5.pdb
+D:\Descartavel\WebApplication5\Simulator\obj\Debug\Simulator.csprojResolveAssemblyReference.cache
+D:\Descartavel\WebApplication5\Simulator\obj\Debug\WebApplication5.dll
+D:\Descartavel\WebApplication5\Simulator\obj\Debug\WebApplication5.pdb
+C:\inetpub\wwwroot\Cortex\Simulator\Simulator\bin\WebApplication5.dll.config
+C:\inetpub\wwwroot\Cortex\Simulator\Simulator\bin\WebApplication5.dll
+C:\inetpub\wwwroot\Cortex\Simulator\Simulator\bin\WebApplication5.pdb
+C:\inetpub\wwwroot\Cortex\Simulator\Simulator\obj\Debug\Simulator.csprojResolveAssemblyReference.cache
+C:\inetpub\wwwroot\Cortex\Simulator\Simulator\obj\Debug\WebApplication5.dll
+C:\inetpub\wwwroot\Cortex\Simulator\Simulator\obj\Debug\WebApplication5.pdb

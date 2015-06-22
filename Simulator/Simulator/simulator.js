@@ -330,8 +330,6 @@ Vehicle.prototype.Update = function (delta, context) {
     var closestDistance = null;
     var closestPoint = null;
 
-   
-    var quadrant = (this.RadarRange * 2) / 3;
     for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
 
         var radian = (angle + 90) * (Math.PI / 180) - Vector2D.Radian(this.Direction);
