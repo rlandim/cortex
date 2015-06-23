@@ -234,6 +234,28 @@ Collision.RayLineIntersect = function (ray, segment) {
 }
 
 function Collider() { }
+Collider.GetAllSegments = function (vehicle) {
+    var segments = new Array();
+    var center = vehicle.CenterPosition();
+    for (var elIndex = 0; elIndex < world.FrameElements.length; elIndex++) {
+        var element = world.FrameElements[elIndex];
+        if (element.Loaded == false) {
+            continue;
+        }
+
+        if (vehicle.Id == element.Id || Collider.prototype.isPrototypeOf(element) == false) {
+            continue;
+        }
+
+        var elementDistance = Vector2D.Distance(element.CenterPosition(), center);
+        if (elementDistance > vehicle.RadarRadius) {
+            continue;
+        }
+
+        segments = segments.concat(element.GetSegments());
+    }
+    return segments; 
+};
 Collider.prototype.Position = null;
 Collider.prototype.Size = null;
 Collider.prototype.GetSegments = function () {
@@ -248,6 +270,8 @@ Collider.prototype.GetSegments = function () {
 Collider.prototype.CenterPosition = function () {
     return Vector2D.Add(this.Position, Vector2D.Multiply(this.Size, 0.5));
 }
+
+
 
 function Vehicle(id, x, y, target) {
     this.Id = id;
@@ -307,32 +331,13 @@ Vehicle.prototype.Update = function (delta, context) {
         this.Velocity = 1;
     }
 
+    var segments = Collider.GetAllSegments(this);
+    
     var center = this.CenterPosition();
-    var segments = new Array();
-    for (var elIndex = 0; elIndex < world.FrameElements.length; elIndex++) {
-        var element = world.FrameElements[elIndex];
-        if (element.Loaded == false) {
-            continue;
-        }
-
-        if (this.Id == element.Id || Collider.prototype.isPrototypeOf(element) == false) {
-            continue;
-        }
-
-        var elementDistance = Vector2D.Distance(element.CenterPosition(), center);
-        if (elementDistance > this.RadarRadius) {
-            continue;
-        }
-
-        segments = segments.concat(element.GetSegments());
-    }
-
     var closestDistance = null;
-    var closestPoint = null;
-
     for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
 
-        var radian = (angle) * (Math.PI / 180) - Vector2D.Radian(this.Direction);
+        var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
         var ray = new Line(center, new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y));
 
         var intersect = null;
@@ -346,15 +351,13 @@ Vehicle.prototype.Update = function (delta, context) {
             }
         }
 
-
         context.beginPath();
         context.moveTo(ray.Start.X, ray.Start.Y);
 
         if (intersect != null) {
-            var intersectDistance = Vector2D.Distance(intersect.Point, center);
-            if (closestDistance == null || intersectDistance <= closestDistance) {
-                closestDistance = intersectDistance;
-                closestPoint = intersect.Point;
+            var obstacleDistance = Vector2D.Distance(intersect.Point, center);
+            if (closestDistance == null || obstacleDistance <= closestDistance) {
+                closestDistance = obstacleDistance;
             }
             context.lineTo(intersect.Point.X, intersect.Point.Y);
             context.strokeStyle = 'rgba(255,0,0,0.1)';
@@ -364,19 +367,6 @@ Vehicle.prototype.Update = function (delta, context) {
             context.strokeStyle = 'rgba(0,0,0,0.1)';
         }
 
-        if (angle == -this.RadarRange) {
-            //Start - Blue
-            console.log("Start", angle);
-            context.strokeStyle = 'rgba(0,0,255,1)';
-        }
-
-        if (angle == this.RadarRange) {
-            //End - Green 
-            console.log("End", angle);
-            context.strokeStyle = 'rgba(0,255,0,1)';
-        }
-
-
         context.stroke();
         context.closePath();
     }
@@ -384,7 +374,7 @@ Vehicle.prototype.Update = function (delta, context) {
     //Teste
     if (closestDistance != null) {
         this.Velocity *= (closestDistance - (Vector2D.Length(this.Size))) / 50;
-    } 
+    }
 
     context.fillStyle = 'rgba(255,0,0,0.5)';
     context.fillText(this.Id, this.Position.X, this.Position.Y);
@@ -449,7 +439,7 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-        
+
 
         //Teste A
         //world.AddFrameElement(new Vehicle('AAA-0001', 450, 230, new Vector2D(750, 230)));
@@ -474,7 +464,7 @@ $(document).ready(function () {
 
 
         //world.AddFrameElement(new Tester(500, 230));
-        world.AddFrameElement(new Tester(500, 200));
+        world.AddFrameElement(new Tester(110, 200));
 
         RefreshElements();
 
