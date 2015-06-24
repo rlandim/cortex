@@ -232,6 +232,19 @@ Collision.RayLineIntersect = function (ray, segment) {
 
     return result;
 }
+Collision.GetIntersection = function (ray, segments) {
+    var intersection = null;
+    for (var segIndex = 0; segIndex < segments.length; segIndex++) {
+        var tIntersect = Collision.RayLineIntersect(ray, segments[segIndex]);
+        if (tIntersect == null) {
+            continue;
+        }
+        if (!intersection || tIntersect.Param <= intersection.Param) {
+            intersection = tIntersect;
+        }
+    }
+    return intersection;
+}
 
 function Collider() { }
 Collider.GetAllSegments = function (vehicle) {
@@ -254,7 +267,7 @@ Collider.GetAllSegments = function (vehicle) {
 
         segments = segments.concat(element.GetSegments());
     }
-    return segments; 
+    return segments;
 };
 Collider.prototype.Position = null;
 Collider.prototype.Size = null;
@@ -331,38 +344,28 @@ Vehicle.prototype.Update = function (delta, context) {
         this.Velocity = 1;
     }
 
-    var segments = Collider.GetAllSegments(this);
-    
     var center = this.CenterPosition();
+    var segments = Collider.GetAllSegments(this);
     var closestDistance = null;
+
     for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
-
         var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
-        var ray = new Line(center, new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y));
+        var rayEnd = new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y);
+        var ray = new Line(center, rayEnd);
 
-        var intersect = null;
-        for (var segIndex = 0; segIndex < segments.length; segIndex++) {
-            var segmentIntersect = Collision.RayLineIntersect(ray, segments[segIndex]);
-            if (segmentIntersect == null) {
-                continue;
-            }
-            if (!intersect || segmentIntersect.Param <= intersect.Param) {
-                intersect = segmentIntersect;
-            }
-        }
+        var intersection = Collision.GetIntersection(ray, segments);
 
         context.beginPath();
         context.moveTo(ray.Start.X, ray.Start.Y);
 
-        if (intersect != null) {
-            var obstacleDistance = Vector2D.Distance(intersect.Point, center);
+        if (intersection != null) {
+            var obstacleDistance = Vector2D.Distance(intersection.Point, center);
             if (closestDistance == null || obstacleDistance <= closestDistance) {
                 closestDistance = obstacleDistance;
             }
-            context.lineTo(intersect.Point.X, intersect.Point.Y);
+            context.lineTo(intersection.Point.X, intersection.Point.Y);
             context.strokeStyle = 'rgba(255,0,0,0.1)';
-        } else
-        {
+        } else {
             context.lineTo(ray.End.X, ray.End.Y);
             context.strokeStyle = 'rgba(0,0,0,0.1)';
         }
@@ -370,6 +373,9 @@ Vehicle.prototype.Update = function (delta, context) {
         context.stroke();
         context.closePath();
     }
+
+
+    world.Pause();
 
     //Teste
     if (closestDistance != null) {
@@ -463,9 +469,22 @@ $(document).ready(function () {
         //world.AddFrameElement(new Vehicle('DDD-0003', 990, 80, new Vector2D(20, 450)));
 
 
-        //world.AddFrameElement(new Tester(500, 230));
+
+        world.AddFrameElement(new Tester(110, 260));
+        //world.AddFrameElement(new Tester(110, 230));
         world.AddFrameElement(new Tester(110, 200));
-        //world.AddFrameElement(new Tester(110, 260));
+
+        //world.AddFrameElement(new Tester(210, 260));
+        world.AddFrameElement(new Tester(210, 230));
+        //world.AddFrameElement(new Tester(210, 200));
+
+        world.AddFrameElement(new Tester(310, 260));
+        //world.AddFrameElement(new Tester(310, 230));
+        world.AddFrameElement(new Tester(310, 200));
+
+        world.AddFrameElement(new Tester(410, 260));
+        world.AddFrameElement(new Tester(410, 230));
+        world.AddFrameElement(new Tester(410, 200));
 
         RefreshElements();
 

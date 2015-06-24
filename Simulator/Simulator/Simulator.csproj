@@ -71,6 +71,7 @@
     <Content Include="fpsmeter.min.js" />
     <Content Include="index.html" />
     <Content Include="jquery.min.js" />
+    <Content Include="Reports\DriverDecision.png" />
     <Content Include="simulator.js" />
     <Content Include="Web.config" />
   </ItemGroup>
