@@ -465,6 +465,7 @@ $(document).ready(function () {
 
         //world.AddFrameElement(new Tester(500, 230));
         world.AddFrameElement(new Tester(110, 200));
+        //world.AddFrameElement(new Tester(110, 260));
 
         RefreshElements();
 
