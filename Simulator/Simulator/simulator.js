@@ -303,7 +303,7 @@ VisionSegment.prototype.Debug = function (owner, container) {
 };
 
 
-function Vehicle(id, x, y, target) {
+function Vehicle(id, x, y, target, disableVision) {
     this.Id = id;
     this.Position = new Vector2D(x, y);
     this.Direction = new Vector2D(0, 0);
@@ -314,6 +314,10 @@ function Vehicle(id, x, y, target) {
         this.StartTarget = target;
         this.Target = target;
         this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+    }
+
+    if (disableVision) {
+        this.DisableVision = disableVision;
     }
 }
 Vehicle.ImageUrl = 'car.png';
@@ -326,10 +330,11 @@ Vehicle.prototype.Target = null;
 Vehicle.prototype.Direction = null;
 Vehicle.prototype.Velocity = 0;
 Vehicle.prototype.Size = null;
-Vehicle.prototype.RadarRadius = 150;
+Vehicle.prototype.RadarRadius = 120;
 Vehicle.prototype.RadarRange = 45;
 Vehicle.prototype.RadarAccuracy = 1;
 Vehicle.prototype.Loaded = false;
+Vehicle.prototype.DisableVision = false;
 Vehicle.prototype.Image = null;
 Vehicle.prototype.Render = function (context) {
 
@@ -351,6 +356,9 @@ Vehicle.prototype.Update = function (delta, context) {
     if (!this.Target) {
         return;
     }
+
+    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+    this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
 
     var distance = Math.round(Vector2D.Distance(this.Target, this.Position));
     if (distance <= 1) {
@@ -397,21 +405,20 @@ Vehicle.prototype.Update = function (delta, context) {
                 currentVisionSegment = new VisionSegment(angle, this.RadarRange);
             }
 
-            context.lineTo(ray.End.X, ray.End.Y);
-            context.strokeStyle = 'rgba(0,0,0,0.1)';
+            if (world.Debug){
+                context.lineTo(ray.End.X, ray.End.Y);
+                context.strokeStyle = 'rgba(0,0,0,0.1)';
+            }
         }
 
         context.stroke();
         context.closePath();
     }
 
-    
-    //if (currentVisionSegment != null) {
-    //    vision.push(currentVisionSegment);
-    //}
-
-    if (vision.length != 0) {
+    if (this.DisableVision == false && vision.length != 0) {
+        //[TURN]
         var dodge = vision.sort(function (a, b) { return b.Length - a.Length; })[0];
+        
         var dodgeCenter = dodge.Center();
         for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
 
@@ -423,25 +430,26 @@ Vehicle.prototype.Update = function (delta, context) {
 
             }
         }
-    } else {
+    } else if (closestDistance != null) {
+        //[BLOCKED]
+        this.Velocity *= (closestDistance - (Vector2D.Length(this.Size))) / 80;
+    }
+    else {
+        //[AHEAD]
         this.Target = this.StartTarget; 
     }
 
 
 
-
-    //world.Pause();
-
-    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
-    this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
-
-    //Teste
-    if (closestDistance != null) {
-        this.Velocity *= (closestDistance - (Vector2D.Length(this.Size))) / 50;
-    }
-
-    context.fillStyle = 'rgba(255,0,0,0.5)';
+    context.fillStyle = 'rgba(0,0,0,0.5)';
     context.fillText(this.Id, this.Position.X, this.Position.Y);
+    
+    if (world.Debug) {
+        context.beginPath();
+        context.arc(this.Target.X, this.Target.Y, 2, 0, 2 * Math.PI, false);
+        context.fillStyle = 'green';
+        context.fill();
+    }
 
 };
 Vehicle.prototype.LoadImage = function () {
@@ -494,6 +502,67 @@ Tester.prototype.Render = function (context) {
 Tester.prototype.Update = function (delta) { };
 
 
+
+
+function Test1() {
+    //Teste A
+    world.AddFrameElement(new Vehicle('AAA-0001', 450, 230, new Vector2D(750, 230), true));
+    world.AddFrameElement(new Vehicle('AAA-0002', 350, 230, new Vector2D(1000, 230), true));
+    world.AddFrameElement(new Vehicle('AAA-0003', 210, 230, new Vector2D(1000, 230), true));
+    world.AddFrameElement(new Vehicle('AAA-0004', 155, 230, new Vector2D(1000, 230), true));
+    world.AddFrameElement(new Vehicle('AAA-0005', 95, 230, new Vector2D(1000, 230), true));
+    world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230), true));
+
+    //Teste B
+    world.AddFrameElement(new Vehicle('BBB-0001', 600, 150, new Vector2D(600, 600), true));
+    world.AddFrameElement(new Vehicle('BBB-0002', 600, 200, new Vector2D(600, 600), true));
+
+    world.AddFrameElement(new Vehicle('CCC-0001', 750, 400, new Vector2D(0, 400), true));
+    world.AddFrameElement(new Vehicle('CCC-0002', 820, 400, new Vector2D(0, 400), true));
+    world.AddFrameElement(new Vehicle('CCC-0003', 890, 400, new Vector2D(0, 400), true));
+    world.AddFrameElement(new Vehicle('CCC-0004', 960, 400, new Vector2D(0, 400), true));
+
+    world.AddFrameElement(new Vehicle('DDD-0001', 1100, 20, new Vector2D(20, 450), true));
+    world.AddFrameElement(new Vehicle('DDD-0002', 1040, 50, new Vector2D(20, 450), true));
+    world.AddFrameElement(new Vehicle('DDD-0003', 990, 80, new Vector2D(20, 450), true));
+}
+
+function Test2() {
+    world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
+
+    world.AddFrameElement(new Tester(110, 260));
+    world.AddFrameElement(new Tester(110, 200));
+
+    world.AddFrameElement(new Tester(210, 260));
+    
+    world.AddFrameElement(new Tester(310, 200));
+
+    world.AddFrameElement(new Tester(410, 260));
+    world.AddFrameElement(new Tester(410, 200));
+
+
+    world.AddFrameElement(new Tester(510, 260));
+    world.AddFrameElement(new Tester(510, 200));
+
+    world.AddFrameElement(new Tester(550, 260));
+    world.AddFrameElement(new Tester(550, 200));
+
+    world.AddFrameElement(new Tester(590, 260));
+    world.AddFrameElement(new Tester(590, 200));
+
+}
+
+
+function Test3() {
+    world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
+
+    world.AddFrameElement(new Tester(110, 260));
+    world.AddFrameElement(new Tester(110, 230));
+    world.AddFrameElement(new Tester(110, 200));
+}
+
+
+
 var fps = null;
 var world = null;
 $(document).ready(function () {
@@ -510,66 +579,10 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-
-
-        //Teste A
-        //world.AddFrameElement(new Vehicle('AAA-0001', 450, 230, new Vector2D(750, 230)));
-        //world.AddFrameElement(new Vehicle('AAA-0002', 350, 230, new Vector2D(1000, 230)));
-        //world.AddFrameElement(new Vehicle('AAA-0003', 210, 230, new Vector2D(1000, 230)));
-        //world.AddFrameElement(new Vehicle('AAA-0004', 155, 230, new Vector2D(1000, 230)));
-        //world.AddFrameElement(new Vehicle('AAA-0005', 95, 230, new Vector2D(1000, 230)));
-        world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
-
-        //Teste B
-        //world.AddFrameElement(new Vehicle('BBB-0001', 600, 150, new Vector2D(600, 600)));
-        //world.AddFrameElement(new Vehicle('BBB-0002', 600, 200, new Vector2D(600, 600)));
-
-        //world.AddFrameElement(new Vehicle('CCC-0001', 750, 400, new Vector2D(0, 400)));
-        //world.AddFrameElement(new Vehicle('CCC-0002', 820, 400, new Vector2D(0, 400)));
-        //world.AddFrameElement(new Vehicle('CCC-0003', 890, 400, new Vector2D(0, 400)));
-        //world.AddFrameElement(new Vehicle('CCC-0004', 960, 400, new Vector2D(0, 400)));
-
-        //world.AddFrameElement(new Vehicle('DDD-0001', 1100, 20, new Vector2D(20, 450)));
-        //world.AddFrameElement(new Vehicle('DDD-0002', 1040, 50, new Vector2D(20, 450)));
-        //world.AddFrameElement(new Vehicle('DDD-0003', 990, 80, new Vector2D(20, 450)));
-
-
-        //world.AddFrameElement(new Tester(40, 170, new Vector2D(602,32)));
-
-        world.AddFrameElement(new Tester(110, 260));
-        //world.AddFrameElement(new Tester(110, 230));
-        world.AddFrameElement(new Tester(110, 200));
-
-        world.AddFrameElement(new Tester(210, 260));
-        //world.AddFrameElement(new Tester(210, 230));
-        //world.AddFrameElement(new Tester(210, 200));
-
-        //world.AddFrameElement(new Tester(310, 260));
-        //world.AddFrameElement(new Tester(310, 230));
-        world.AddFrameElement(new Tester(310, 200));
-
-        world.AddFrameElement(new Tester(410, 260));
-        //world.AddFrameElement(new Tester(410, 230));
-        world.AddFrameElement(new Tester(410, 200));
-
-
-        world.AddFrameElement(new Tester(510, 260));
-        //world.AddFrameElement(new Tester(410, 230));
-        world.AddFrameElement(new Tester(510, 200));
-
-        world.AddFrameElement(new Tester(550, 260));
-        //world.AddFrameElement(new Tester(410, 230));
-        world.AddFrameElement(new Tester(550, 200));
-
-        world.AddFrameElement(new Tester(590, 260));
-        //world.AddFrameElement(new Tester(410, 230));
-        world.AddFrameElement(new Tester(590, 200));
-
-        //world.AddFrameElement(new Tester(40, 290, new Vector2D(602, 32)));
-
-
-        //RefreshElements();
-
+        
+        //Test1(); //Heavy traffic
+        Test2(); //Dodge of obstacles 
+        //Test3();  //Blocked 
     };
     preloader.Load();
 
@@ -579,13 +592,5 @@ $(document).ready(function () {
 
 });
 
-function RefreshElements() {
-    var container = $('#vision_container');
-    container.empty();
-    for (var index = 0; index < world.FrameElements.length; index++) {
-        var item = world.FrameElements[index];
-        if (Vehicle.prototype.isPrototypeOf(item)) {
-            container.append("<div id='" + item.Id + "' class='item'><span id='Name'>" + item.Id + "</span><div class='vision'></div></div>");
-        }
-    }
-}
+
+
