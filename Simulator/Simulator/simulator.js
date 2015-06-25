@@ -284,6 +284,19 @@ Collider.prototype.CenterPosition = function () {
     return Vector2D.Add(this.Position, Vector2D.Multiply(this.Size, 0.5));
 }
 
+function VisionSegment(start, end) {
+    this.Start = start;
+    this.End = end;
+}
+VisionSegment.prototype.Start = null;
+VisionSegment.prototype.End = null;
+VisionSegment.prototype.Length = function () {
+    return Math.max(this.Start, this.End) - Math.min(this.Start, this.End);
+};
+VisionSegment.prototype.Center = function () {
+    return (this.Length / 2) + this.Start;
+};
+
 
 
 function Vehicle(id, x, y, target) {
@@ -348,6 +361,7 @@ Vehicle.prototype.Update = function (delta, context) {
     var segments = Collider.GetAllSegments(this);
     var closestDistance = null;
 
+    
     for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
         var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
         var rayEnd = new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y);
@@ -369,13 +383,12 @@ Vehicle.prototype.Update = function (delta, context) {
             context.lineTo(ray.End.X, ray.End.Y);
             context.strokeStyle = 'rgba(0,0,0,0.1)';
         }
-
+        
         context.stroke();
         context.closePath();
     }
 
-
-    world.Pause();
+     //world.Pause();
 
     //Teste
     if (closestDistance != null) {
@@ -474,17 +487,31 @@ $(document).ready(function () {
         //world.AddFrameElement(new Tester(110, 230));
         world.AddFrameElement(new Tester(110, 200));
 
-        //world.AddFrameElement(new Tester(210, 260));
-        world.AddFrameElement(new Tester(210, 230));
+        world.AddFrameElement(new Tester(210, 260));
+        //world.AddFrameElement(new Tester(210, 230));
         //world.AddFrameElement(new Tester(210, 200));
 
-        world.AddFrameElement(new Tester(310, 260));
+        //world.AddFrameElement(new Tester(310, 260));
         //world.AddFrameElement(new Tester(310, 230));
         world.AddFrameElement(new Tester(310, 200));
 
         world.AddFrameElement(new Tester(410, 260));
-        world.AddFrameElement(new Tester(410, 230));
+        //world.AddFrameElement(new Tester(410, 230));
         world.AddFrameElement(new Tester(410, 200));
+
+
+        world.AddFrameElement(new Tester(510, 260));
+        //world.AddFrameElement(new Tester(410, 230));
+        world.AddFrameElement(new Tester(510, 200));
+
+        world.AddFrameElement(new Tester(550, 260));
+        //world.AddFrameElement(new Tester(410, 230));
+        world.AddFrameElement(new Tester(550, 200));
+
+        world.AddFrameElement(new Tester(590, 260));
+        //world.AddFrameElement(new Tester(410, 230));
+        world.AddFrameElement(new Tester(590, 200));
+
 
         RefreshElements();
 
@@ -498,14 +525,12 @@ $(document).ready(function () {
 });
 
 function RefreshElements() {
-    $('#elements').empty();
+    var container = $('#vision_container');
+    container.empty();
     for (var index = 0; index < world.FrameElements.length; index++) {
         var item = world.FrameElements[index];
-        $('#elements').append($('<option>', { value: index, text: item.Id }));
+        if (Vehicle.prototype.isPrototypeOf(item)) {
+            container.append("<div id='" + item.Id + "' class='item'><span id='Name'>" + item.Id + "</span><div class='vision'></div></div>");
+        }
     }
-}
-function RemoveVehicle() {
-    var index = $('#elements option:selected').val();
-    world.RemoveFrameElement(index);
-    RefreshElements();
 }
