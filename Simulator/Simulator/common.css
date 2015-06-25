@@ -30,25 +30,29 @@
     }
 
 #vision_container {
-    margin-top:10px;
-    width:1200px;
-    font-size:10px;
+    margin-top: 10px;
+    width: 1200px;
+    font-size: 10px;
 }
 
-#vision_container .item{
-    border:1px solid gray;
-    padding-left: 5px;
-    margin-bottom: -1px;
-}
+    #vision_container .item {
+        border: 1px solid gray;
+        padding-left: 5px;
+        margin-bottom: -1px;
+    }
 
 .vision {
-    background-color: rgb(234, 233, 233);
-    width: 1080px; 
+    background-color: red;
+    width: 1080px;
+    height: 11px;
     float: right;
+    position: relative;
 }
-.vision .segment{
-    float:left;
-    background-color:red;
-    width:540px; /*x12*/
-    text-align:center;
-}
+
+    .vision .segment {
+        background-color: darkgreen;
+        width:0px;
+        height:11px;
+        left: 0px;
+        position: absolute;
+    }

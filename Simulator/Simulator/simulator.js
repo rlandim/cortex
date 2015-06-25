@@ -294,9 +294,13 @@ VisionSegment.prototype.Length = function () {
     return Math.max(this.Start, this.End) - Math.min(this.Start, this.End);
 };
 VisionSegment.prototype.Center = function () {
-    return (this.Length / 2) + this.Start;
+    return (this.Length() / 2) + this.Start;
 };
-
+VisionSegment.prototype.Debug = function (owner, container) {
+    var item = "<div class='segment' style='width:" + (this.Length() * 12) + "px; left:" + (this.Start + 45) * 12 + "px;'></div>";
+    console.log(item);
+    container.append(item);
+};
 
 
 function Vehicle(id, x, y, target) {
@@ -307,6 +311,7 @@ function Vehicle(id, x, y, target) {
     this.LoadImage();
 
     if (target) {
+        this.StartTarget = target;
         this.Target = target;
         this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
     }
@@ -316,11 +321,12 @@ Vehicle.prototype = new Collider();
 Vehicle.prototype.Id = '';
 Vehicle.prototype.Description = '';
 Vehicle.prototype.Position = null;
+Vehicle.prototype.StartTarget = null; 
 Vehicle.prototype.Target = null;
 Vehicle.prototype.Direction = null;
 Vehicle.prototype.Velocity = 0;
 Vehicle.prototype.Size = null;
-Vehicle.prototype.RadarRadius = 100;
+Vehicle.prototype.RadarRadius = 150;
 Vehicle.prototype.RadarRange = 45;
 Vehicle.prototype.RadarAccuracy = 1;
 Vehicle.prototype.Loaded = false;
@@ -346,9 +352,6 @@ Vehicle.prototype.Update = function (delta, context) {
         return;
     }
 
-    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
-    this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
-
     var distance = Math.round(Vector2D.Distance(this.Target, this.Position));
     if (distance <= 1) {
         this.Velocity = 0;
@@ -361,7 +364,9 @@ Vehicle.prototype.Update = function (delta, context) {
     var segments = Collider.GetAllSegments(this);
     var closestDistance = null;
 
-    
+    var currentVisionSegment = null;
+    var vision = [];
+
     for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
         var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
         var rayEnd = new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y);
@@ -377,18 +382,58 @@ Vehicle.prototype.Update = function (delta, context) {
             if (closestDistance == null || obstacleDistance <= closestDistance) {
                 closestDistance = obstacleDistance;
             }
+
+            if (currentVisionSegment != null) {
+                currentVisionSegment.End = angle - this.RadarAccuracy;
+                vision.push(currentVisionSegment);
+                currentVisionSegment = null;
+            }
+
             context.lineTo(intersection.Point.X, intersection.Point.Y);
             context.strokeStyle = 'rgba(255,0,0,0.1)';
         } else {
+
+            if (currentVisionSegment == null) {
+                currentVisionSegment = new VisionSegment(angle, this.RadarRange);
+            }
+
             context.lineTo(ray.End.X, ray.End.Y);
             context.strokeStyle = 'rgba(0,0,0,0.1)';
         }
-        
+
         context.stroke();
         context.closePath();
     }
 
-     //world.Pause();
+    
+    //if (currentVisionSegment != null) {
+    //    vision.push(currentVisionSegment);
+    //}
+
+    if (vision.length != 0) {
+        var dodge = vision.sort(function (a, b) { return b.Length - a.Length; })[0];
+        var dodgeCenter = dodge.Center();
+        for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
+
+            if (dodge != null && (dodgeCenter == angle)) {
+
+                var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
+                var newTarget = new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y);
+                this.Target = newTarget;
+
+            }
+        }
+    } else {
+        this.Target = this.StartTarget; 
+    }
+
+
+
+
+    //world.Pause();
+
+    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+    this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
 
     //Teste
     if (closestDistance != null) {
@@ -412,11 +457,18 @@ Vehicle.prototype.LoadImage = function () {
         self.Loaded = true;
     }
 };
+Vehicle.prototype.ClearVision = function () {
+    var container = $('#' + this.Id + ' .vision');
+    container.empty();
+}
 
-
-function Tester(x, y) {
+function Tester(x, y, size) {
     this.Position = new Vector2D(x, y);
-    this.Size = new Vector2D(32, 32);
+    if (size == undefined) {
+        this.Size = new Vector2D(32, 32);
+    } else {
+        this.Size = size;
+    }
 }
 Tester.prototype = new Collider();
 Tester.prototype.Position = null;
@@ -482,6 +534,7 @@ $(document).ready(function () {
         //world.AddFrameElement(new Vehicle('DDD-0003', 990, 80, new Vector2D(20, 450)));
 
 
+        //world.AddFrameElement(new Tester(40, 170, new Vector2D(602,32)));
 
         world.AddFrameElement(new Tester(110, 260));
         //world.AddFrameElement(new Tester(110, 230));
@@ -512,8 +565,10 @@ $(document).ready(function () {
         //world.AddFrameElement(new Tester(410, 230));
         world.AddFrameElement(new Tester(590, 200));
 
+        //world.AddFrameElement(new Tester(40, 290, new Vector2D(602, 32)));
 
-        RefreshElements();
+
+        //RefreshElements();
 
     };
     preloader.Load();
