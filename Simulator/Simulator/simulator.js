@@ -178,6 +178,10 @@ Vector2D.Angle = function (vector) {
     var radian = Vector2D.Radian(vector);
     return radian * 180 / Math.PI;
 };
+Vector2D.Lerp = function (vectorGoal, vectorCurrent, delta) {
+    var distance = Vector2D.DistanceVector(vectorGoal, vectorCurrent);
+    return Vector2D.Add(vectorCurrent, Vector2D.Multiply(distance, delta), delta);
+};
 
 function Line(start, end) {
     this.Start = start;
@@ -306,31 +310,31 @@ Vehicle.prototype = new Collider();
 Vehicle.prototype.Id = '';
 Vehicle.prototype.Description = '';
 Vehicle.prototype.Position = null;
-Vehicle.prototype.StartTarget = null; 
+Vehicle.prototype.StartTarget = null;
 Vehicle.prototype.Target = null;
 Vehicle.prototype.Direction = null;
 Vehicle.prototype.Velocity = 0;
 Vehicle.prototype.Size = null;
+Vehicle.prototype.HalfSize = null;
 Vehicle.prototype.RadarRadius = 120;
 Vehicle.prototype.RadarRange = 45;
 Vehicle.prototype.RadarAccuracy = 1;
 Vehicle.prototype.Loaded = false;
-Vehicle.prototype.DisableVision = false;
 Vehicle.prototype.Image = null;
+Vehicle.prototype.RotationOffset = 8;
 Vehicle.prototype.Render = function (context) {
 
     if (this.Loaded == false) {
         return;
     }
 
-    var center = this.CenterPosition();
     var rotation = Vector2D.Radian(this.Direction);
-
-    context.translate(center.X, center.Y);
+    context.translate(this.Position.X, this.Position.Y);
     context.rotate(rotation);
-    context.drawImage(this.Image, -this.Size.X / 2, -this.Size.Y / 2);
+    context.drawImage(this.Image, this.RotationOffset - this.HalfSize.X, -this.HalfSize.Y);
     context.rotate(-rotation);
-    context.translate(-center.X, -center.Y);
+    context.translate(-this.Position.X, -this.Position.Y);
+
 };
 Vehicle.prototype.Update = function (delta, context) {
 
@@ -338,12 +342,23 @@ Vehicle.prototype.Update = function (delta, context) {
         return;
     }
 
-    this.Direction  = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
-    this.Position   = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
-    this.Velocity   = Vector2D.Distance(this.Target, this.Position) > 1 ? 1 : 0;
-    
-    
+    var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position)); 
+    this.Direction = Vector2D.Lerp(goalDirection, this.Direction, delta);
+    this.Position  = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
+    var distance = Vector2D.Distance(this.Target, this.Position);
 
+    
+    if (distance > 1) {
+        this.Velocity = 1;
+    } else {
+        this.Arrived();
+    }
+
+};
+Vehicle.prototype.Arrived = function () {
+    this.Velocity = 0;
+    this.Target = null;
+    //this.Target = new Vector2D(500, 400);
 };
 Vehicle.prototype.LoadImage = function () {
     var self = this;
@@ -355,6 +370,7 @@ Vehicle.prototype.LoadImage = function () {
     self.Image.src = Vehicle.ImageUrl;
     if (self.Image.complete) {
         self.Size = new Vector2D(self.Image.width, self.Image.height);
+        self.HalfSize = Vector2D.Multiply(this.Size, 0.5);
         self.Loaded = true;
     }
 };
@@ -397,65 +413,6 @@ Tester.prototype.Update = function (delta) { };
 
 
 
-function Test1() {
-    //Teste A
-    world.AddFrameElement(new Vehicle('AAA-0001', 450, 230, new Vector2D(750, 230), true));
-    world.AddFrameElement(new Vehicle('AAA-0002', 350, 230, new Vector2D(1000, 230), true));
-    world.AddFrameElement(new Vehicle('AAA-0003', 210, 230, new Vector2D(1000, 230), true));
-    world.AddFrameElement(new Vehicle('AAA-0004', 155, 230, new Vector2D(1000, 230), true));
-    world.AddFrameElement(new Vehicle('AAA-0005', 95, 230, new Vector2D(1000, 230), true));
-    world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230), true));
-
-    //Teste B
-    world.AddFrameElement(new Vehicle('BBB-0001', 600, 150, new Vector2D(600, 600), true));
-    world.AddFrameElement(new Vehicle('BBB-0002', 600, 200, new Vector2D(600, 600), true));
-
-    world.AddFrameElement(new Vehicle('CCC-0001', 750, 400, new Vector2D(0, 400), true));
-    world.AddFrameElement(new Vehicle('CCC-0002', 820, 400, new Vector2D(0, 400), true));
-    world.AddFrameElement(new Vehicle('CCC-0003', 890, 400, new Vector2D(0, 400), true));
-    world.AddFrameElement(new Vehicle('CCC-0004', 960, 400, new Vector2D(0, 400), true));
-
-    world.AddFrameElement(new Vehicle('DDD-0001', 1100, 20, new Vector2D(20, 450), true));
-    world.AddFrameElement(new Vehicle('DDD-0002', 1040, 50, new Vector2D(20, 450), true));
-    world.AddFrameElement(new Vehicle('DDD-0003', 990, 80, new Vector2D(20, 450), true));
-}
-
-function Test2() {
-    world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
-
-    world.AddFrameElement(new Tester(110, 260));
-    world.AddFrameElement(new Tester(110, 200));
-
-    world.AddFrameElement(new Tester(210, 260));
-    
-    world.AddFrameElement(new Tester(310, 200));
-
-    world.AddFrameElement(new Tester(410, 260));
-    world.AddFrameElement(new Tester(410, 200));
-
-
-    world.AddFrameElement(new Tester(510, 260));
-    world.AddFrameElement(new Tester(510, 200));
-
-    world.AddFrameElement(new Tester(550, 260));
-    world.AddFrameElement(new Tester(550, 200));
-
-    world.AddFrameElement(new Tester(590, 260));
-    world.AddFrameElement(new Tester(590, 200));
-
-}
-
-
-function Test3() {
-    world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
-
-    world.AddFrameElement(new Tester(110, 260));
-    world.AddFrameElement(new Tester(110, 230));
-    world.AddFrameElement(new Tester(110, 200));
-}
-
-
-
 var fps = null;
 var world = null;
 $(document).ready(function () {
@@ -472,10 +429,8 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-        
-        //Test1(); //Heavy traffic
-        Test2(); //Dodge of obstacles 
-        //Test3();  //Blocked 
+        world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(200, 230)));
+
     };
     preloader.Load();
 
