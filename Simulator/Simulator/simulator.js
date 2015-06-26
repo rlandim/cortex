@@ -341,9 +341,10 @@ Vehicle.prototype.Update = function (delta, context) {
     var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
     this.Direction = Vector2D.Lerp(goalDirection, this.Direction, delta);
     this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
+
+
+
     var distance = Vector2D.Distance(this.Target, this.Position);
-
-
     if (distance > 1) {
         this.Velocity = 1;
     } else {
@@ -354,7 +355,6 @@ Vehicle.prototype.Update = function (delta, context) {
 Vehicle.prototype.Arrived = function () {
     this.Velocity = 0;
     this.Target = null;
-    //this.Target = new Vector2D(500, 400);
 };
 Vehicle.prototype.LoadImage = function () {
     var self = this;
@@ -425,7 +425,7 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-        world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(200, 230)));
+        world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
 
     };
     preloader.Load();
