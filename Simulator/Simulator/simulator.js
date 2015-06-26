@@ -284,25 +284,6 @@ Collider.prototype.CenterPosition = function () {
     return Vector2D.Add(this.Position, Vector2D.Multiply(this.Size, 0.5));
 }
 
-function VisionSegment(start, end) {
-    this.Start = start;
-    this.End = end;
-}
-VisionSegment.prototype.Start = null;
-VisionSegment.prototype.End = null;
-VisionSegment.prototype.Length = function () {
-    return Math.max(this.Start, this.End) - Math.min(this.Start, this.End);
-};
-VisionSegment.prototype.Center = function () {
-    return (this.Length() / 2) + this.Start;
-};
-VisionSegment.prototype.Debug = function (owner, container) {
-    var item = "<div class='segment' style='width:" + (this.Length() * 12) + "px; left:" + (this.Start + 45) * 12 + "px;'></div>";
-    console.log(item);
-    container.append(item);
-};
-
-
 function Vehicle(id, x, y, target, disableVision) {
     this.Id = id;
     this.Position = new Vector2D(x, y);
@@ -357,99 +338,11 @@ Vehicle.prototype.Update = function (delta, context) {
         return;
     }
 
-    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
-    this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
-
-    var distance = Math.round(Vector2D.Distance(this.Target, this.Position));
-    if (distance <= 1) {
-        this.Velocity = 0;
-        return;
-    } else {
-        this.Velocity = 1;
-    }
-
-    var center = this.CenterPosition();
-    var segments = Collider.GetAllSegments(this);
-    var closestDistance = null;
-
-    var currentVisionSegment = null;
-    var vision = [];
-
-    for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
-        var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
-        var rayEnd = new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y);
-        var ray = new Line(center, rayEnd);
-
-        var intersection = Collision.GetIntersection(ray, segments);
-
-        context.beginPath();
-        context.moveTo(ray.Start.X, ray.Start.Y);
-
-        if (intersection != null) {
-            var obstacleDistance = Vector2D.Distance(intersection.Point, center);
-            if (closestDistance == null || obstacleDistance <= closestDistance) {
-                closestDistance = obstacleDistance;
-            }
-
-            if (currentVisionSegment != null) {
-                currentVisionSegment.End = angle - this.RadarAccuracy;
-                vision.push(currentVisionSegment);
-                currentVisionSegment = null;
-            }
-
-            context.lineTo(intersection.Point.X, intersection.Point.Y);
-            context.strokeStyle = 'rgba(255,0,0,0.1)';
-        } else {
-
-            if (currentVisionSegment == null) {
-                currentVisionSegment = new VisionSegment(angle, this.RadarRange);
-            }
-
-            if (world.Debug){
-                context.lineTo(ray.End.X, ray.End.Y);
-                context.strokeStyle = 'rgba(0,0,0,0.1)';
-            }
-        }
-
-        context.stroke();
-        context.closePath();
-    }
-
-    if (this.DisableVision == false && vision.length != 0) {
-        //[TURN]
-        var dodge = vision.sort(function (a, b) { return b.Length - a.Length; })[0];
-        
-        var dodgeCenter = dodge.Center();
-        for (var angle = -this.RadarRange; angle < this.RadarRange + 1; angle += this.RadarAccuracy) {
-
-            if (dodge != null && (dodgeCenter == angle)) {
-
-                var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
-                var newTarget = new Vector2D((Math.cos(radian) * this.RadarRadius) + center.X, (Math.sin(radian) * this.RadarRadius) + center.Y);
-                this.Target = newTarget;
-
-            }
-        }
-    } else if (closestDistance != null) {
-        //[BLOCKED]
-        this.Velocity *= (closestDistance - (Vector2D.Length(this.Size))) / 80;
-    }
-    else {
-        //[AHEAD]
-        this.Target = this.StartTarget; 
-    }
-
-
-
-    context.fillStyle = 'rgba(0,0,0,0.5)';
-    context.fillText(this.Id, this.Position.X, this.Position.Y);
+    this.Direction  = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+    this.Position   = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
+    this.Velocity   = Vector2D.Distance(this.Target, this.Position) > 1 ? 1 : 0;
     
-    if (world.Debug) {
-        context.beginPath();
-        context.arc(this.Target.X, this.Target.Y, 2, 0, 2 * Math.PI, false);
-        context.fillStyle = 'green';
-        context.fill();
-    }
+    
 
 };
 Vehicle.prototype.LoadImage = function () {
