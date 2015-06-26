@@ -412,6 +412,7 @@ Vehicle.prototype.Update = function (delta, context) {
 
     //Se atingir a velocidade minima (0.3)
     //Verificar esquerda.
+    //Teste - melhor fazer em paralelo (não angulo)
     obstacleDistance = this.RadarLeft(colliderSegments, context);
 
     //world.Pause();
