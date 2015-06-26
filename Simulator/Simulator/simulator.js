@@ -288,7 +288,7 @@ Collider.prototype.CenterPosition = function () {
     return Vector2D.Add(this.Position, Vector2D.Multiply(this.Size, 0.5));
 }
 
-function Vehicle(id, x, y, target, disableVision) {
+function Vehicle(id, x, y, target) {
     this.Id = id;
     this.Position = new Vector2D(x, y);
     this.Direction = new Vector2D(0, 0);
@@ -299,10 +299,6 @@ function Vehicle(id, x, y, target, disableVision) {
         this.StartTarget = target;
         this.Target = target;
         this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
-    }
-
-    if (disableVision) {
-        this.DisableVision = disableVision;
     }
 }
 Vehicle.ImageUrl = 'car.png';
@@ -342,12 +338,12 @@ Vehicle.prototype.Update = function (delta, context) {
         return;
     }
 
-    var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position)); 
+    var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
     this.Direction = Vector2D.Lerp(goalDirection, this.Direction, delta);
-    this.Position  = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
+    this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
     var distance = Vector2D.Distance(this.Target, this.Position);
 
-    
+
     if (distance > 1) {
         this.Velocity = 1;
     } else {
