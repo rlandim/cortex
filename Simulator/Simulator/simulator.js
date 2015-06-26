@@ -275,13 +275,21 @@ Collider.GetAllSegments = function (vehicle) {
 };
 Collider.prototype.Position = null;
 Collider.prototype.Size = null;
+Collider.prototype.SizeHalf = null;
+Collider.prototype.RotationOffset = 0;
 Collider.prototype.GetSegments = function () {
+
+    var topleft = new Vector2D(this.Position.X - this.SizeHalf.X - this.RotationOffset, this.Position.Y - this.SizeHalf.Y - this.RotationOffset);
+    var bottomright = new Vector2D(topleft.X + this.Size.X + this.SizeHalf.X, topleft.Y + this.Size.Y + this.SizeHalf.Y);
+    var topright = new Vector2D(bottomright.X, topleft.Y);
+    var bottomleft = new Vector2D(topleft.X, bottomright.Y);
     var segments = [
-        new Line(this.Position, new Vector2D(this.Position.X, this.Position.Y + this.Size.Y)),
-        new Line(new Vector2D(this.Position.X, this.Position.Y + this.Size.Y), new Vector2D(this.Position.X + this.Size.X, this.Position.Y + this.Size.Y)),
-        new Line(new Vector2D(this.Position.X + this.Size.X, this.Position.Y + this.Size.Y), new Vector2D(this.Position.X + this.Size.X, this.Position.Y)),
-        new Line(new Vector2D(this.Position.X + this.Size.X, this.Position.Y), this.Position)
+        new Line(topleft, topright),
+        new Line(bottomleft, bottomright),
+        new Line(topleft, bottomleft),
+        new Line(topright, bottomright)
     ];
+
     return segments;
 };
 Collider.prototype.CenterPosition = function () {
@@ -294,6 +302,7 @@ function Vehicle(id, x, y, target) {
     this.Direction = new Vector2D(0, 0);
     this.Size = new Vector2D(0, 0);
     this.LoadImage();
+    this.RotationOffset = 8;
 
     if (target) {
         this.StartTarget = target;
@@ -310,14 +319,11 @@ Vehicle.prototype.StartTarget = null;
 Vehicle.prototype.Target = null;
 Vehicle.prototype.Direction = null;
 Vehicle.prototype.Velocity = 0;
-Vehicle.prototype.Size = null;
-Vehicle.prototype.HalfSize = null;
 Vehicle.prototype.RadarRadius = 120;
-Vehicle.prototype.RadarRange = 45;
+Vehicle.prototype.RadarRangeFront = 5;
 Vehicle.prototype.RadarAccuracy = 1;
 Vehicle.prototype.Loaded = false;
 Vehicle.prototype.Image = null;
-Vehicle.prototype.RotationOffset = 8;
 Vehicle.prototype.Render = function (context) {
 
     if (this.Loaded == false) {
@@ -327,7 +333,7 @@ Vehicle.prototype.Render = function (context) {
     var rotation = Vector2D.Radian(this.Direction);
     context.translate(this.Position.X, this.Position.Y);
     context.rotate(rotation);
-    context.drawImage(this.Image, this.RotationOffset - this.HalfSize.X, -this.HalfSize.Y);
+    context.drawImage(this.Image, this.RotationOffset - this.SizeHalf.X, -this.SizeHalf.Y);
     context.rotate(-rotation);
     context.translate(-this.Position.X, -this.Position.Y);
 
@@ -341,10 +347,26 @@ Vehicle.prototype.Update = function (delta, context) {
     var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
     this.Direction = Vector2D.Lerp(goalDirection, this.Direction, delta);
     this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
-
-
-
     var distance = Vector2D.Distance(this.Target, this.Position);
+
+
+    var segments = this.GetSegments();
+    for (var i = 0; i < segments.length; i++) {
+        var item = segments[i];
+
+        context.beginPath();
+        context.moveTo(item.Start.X, item.Start.Y);
+        context.lineTo(item.End.X, item.End.Y);
+        context.strokeStyle = 'rgba(0,0,0,1)';
+        context.stroke();
+
+    }
+
+
+
+    world.Pause();
+
+
     if (distance > 1) {
         this.Velocity = 1;
     } else {
@@ -352,6 +374,21 @@ Vehicle.prototype.Update = function (delta, context) {
     }
 
 };
+Vehicle.prototype.RadarFront = function (colliderSegments, context) {
+
+    for (var angle = -this.RadarRangeFront; angle < this.RadarRangeFront + 1; angle += this.RadarAccuracy) {
+        var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
+        var rayEnd = new Vector2D((Math.cos(radian) * this.RadarRadius) + this.Position.X, (Math.sin(radian) * this.RadarRadius) + this.Position.Y);
+        var ray = new Line(this.Position, rayEnd);
+
+        context.beginPath();
+        context.moveTo(ray.Start.X, ray.Start.Y);
+        context.lineTo(ray.End.X, ray.End.Y);
+        context.strokeStyle = 'rgba(0,0,0,0.1)';
+        context.stroke();
+    }
+}
+
 Vehicle.prototype.Arrived = function () {
     this.Velocity = 0;
     this.Target = null;
@@ -366,7 +403,7 @@ Vehicle.prototype.LoadImage = function () {
     self.Image.src = Vehicle.ImageUrl;
     if (self.Image.complete) {
         self.Size = new Vector2D(self.Image.width, self.Image.height);
-        self.HalfSize = Vector2D.Multiply(this.Size, 0.5);
+        self.SizeHalf = Vector2D.Multiply(this.Size, 0.5);
         self.Loaded = true;
     }
 };
@@ -382,26 +419,25 @@ function Tester(x, y, size) {
     } else {
         this.Size = size;
     }
+
+    this.SizeHalf = Vector2D.Multiply(this.Size, 0.5);
 }
 Tester.prototype = new Collider();
 Tester.prototype.Position = null;
 Tester.prototype.Size = null;
-Tester.prototype.Step = 0;
 Tester.prototype.Render = function (context) {
-    this.Step++;
 
     context.translate(this.Position.X, this.Position.Y);
     context.rotate(0);
 
     context.beginPath();
     context.moveTo(0, 0);
-    context.rect(0, 0, this.Size.X, this.Size.Y);
+    context.rect(-this.SizeHalf.X, -this.SizeHalf.Y, this.Size.X, this.Size.Y);
     context.fillStyle = 'rgba(0,0,0,0.5)';
     context.fill();
 
     context.rotate(0);
     context.translate(-this.Position.X, -this.Position.Y);
-
 
 };
 Tester.prototype.Update = function (delta) { };
@@ -425,7 +461,10 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-        world.AddFrameElement(new Vehicle('AAA-0006', 50, 230, new Vector2D(1000, 230)));
+        // world.AddFrameElement(new Vehicle('AAA-0002', 500, 250));
+        world.AddFrameElement(new Vehicle('AAA-0001', 100, 250, new Vector2D(1000, 250)));
+        //world.AddFrameElement(new Vehicle('AAA-0001', 100, 250));
+
 
     };
     preloader.Load();
@@ -435,6 +474,7 @@ $(document).ready(function () {
     });
 
 });
+
 
 
 
