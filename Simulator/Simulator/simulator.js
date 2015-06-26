@@ -395,39 +395,17 @@ Vehicle.prototype.Update = function (delta, context) {
       
     //Reduzir velocidade
     this.Velocity *= (obstacleDistance - (Vector2D.Length(this.SizeHalf))) / 100;   
-
-
-    return; 
     if (this.Velocity > 0.3) {
         return; 
     }
 
-    //Atingiu a velocidade minima, verificar à esquerda
-    obstacleDistance = this.RadarLeft(colliderSegments, context);
-    if (obstacleDistance == null) {
-        //Sem obstaculos, vire e vá em frente
-        //this.Direction = ?
-        this.Velocity = 1;
-        return; 
-    }
+    //Se atingir a velocidade minima (0.3)
+    //Verificar esquerda.
+    //Se não haver obstáculos, virar a esquerda e return
+    //Se haver obstáculo, verificar direita
+    //Se não haver obstáculos, virar a direita e return
+    //Se haver obstáculo, existe um bloqueio, aguardar.
 
-    //Reduzir velocidade
-    this.Velocity *= (obstacleDistance - (Vector2D.Length(this.SizeHalf))) / 100;
-    if (this.Velocity > 0.3) {
-        return;
-    }
-
-    //Atingiu a velocidade minima, verificar à direita
-    obstacleDistance = this.RadarRight(colliderSegments, context);
-    if (obstacleDistance == null) {
-        //Sem obstaculos, vire e vá em frente
-        //this.Direction = ?
-        this.Velocity = 1;
-        return;
-    }
-
-    //Não há oq fazer, desacelere. 
-    this.Velocity *= (obstacleDistance - (Vector2D.Length(this.SizeHalf))) / 100;
 
 
 };
