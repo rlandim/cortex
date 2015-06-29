@@ -375,10 +375,11 @@ Vehicle.prototype.Update = function (delta, context) {
         return;
     }
 
-    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+    var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+    this.Direction = Vector2D.LerpVector(goalDirection, this.Direction, delta *5);
     this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
+    var distance = Vector2D.Distance(this.Target, this.Position);
 
-    var distance = Math.round(Vector2D.Distance(this.Target, this.Position));
     if (distance <= 1) {
         this.Velocity = 0;
         return;
