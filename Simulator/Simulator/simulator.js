@@ -179,13 +179,12 @@ Vector2D.Angle = function (vector) {
     return radian * 180 / Math.PI;
 };
 Vector2D.Lerp = function (goal, current, delta) {
-    if (delta > 1)
-    {
+    if (delta > 1) {
         return goal;
     }
 
     if (delta < 0) {
-        return current; 
+        return current;
     }
 
     var distance = goal - current;
@@ -300,7 +299,7 @@ Collider.prototype.GetSegments = function () {
 
     //Testes
     var topleft = new Vector2D(this.Position.X - this.RotationOffset, this.Position.Y - this.RotationOffset);
-    var bottomright = new Vector2D(topleft.X + this.Size.X , topleft.Y + this.Size.Y );
+    var bottomright = new Vector2D(topleft.X + this.SizeHalf.X, topleft.Y + this.SizeHalf.Y);
     var topright = new Vector2D(bottomright.X, topleft.Y);
     var bottomleft = new Vector2D(topleft.X, bottomright.Y);
 
@@ -338,8 +337,8 @@ Vehicle.prototype.Target = null;
 Vehicle.prototype.Direction = null;
 Vehicle.prototype.Velocity = 0;
 Vehicle.prototype.RadarRadius = 120;
-Vehicle.prototype.RadarRangeFront = 14;
-Vehicle.prototype.RadarRangeLeft = 40;
+Vehicle.prototype.RadarRangeFront = 12; //parallel units to the car
+Vehicle.prototype.RadarRangeLeft = 40; //Angle on the left side
 Vehicle.prototype.RadarAccuracy = 1;
 Vehicle.prototype.Loaded = false;
 Vehicle.prototype.Image = null;
@@ -397,15 +396,15 @@ Vehicle.prototype.Update = function (delta, context) {
     obstacleDistance = this.RadarFront(colliderSegments, context);
     if (obstacleDistance == null) {
         //Sem obstaculos continuar à frente
-        this.Target = this.StartTarget; 
+        this.Target = this.StartTarget;
         this.Velocity = 1;
-        return; 
-    } 
-      
+        return;
+    }
+
     //Reduzir velocidade
-    this.Velocity *= (obstacleDistance - (Vector2D.Length(this.Size))) / 100;   
+    this.Velocity *= (obstacleDistance - (Vector2D.Length(this.Size))) / 100;
     if (this.Velocity > 0.5) {
-        return; 
+        return;
     }
 
     //Se atingir a velocidade minima (0.3)
@@ -429,40 +428,18 @@ Vehicle.prototype.RadarFront = function (segments, context) {
         return;
     }
 
-
-
-
-
-    //for (var i = -30; i < 40; i += 10) {
-    //    var radian = 90 * (Math.PI / 180) + Vector2D.Radian(this.Direction);
-    //    var start = new Vector2D((Math.cos(radian) * i) + this.Position.X, (Math.sin(radian) * i) + this.Position.Y);
-    //    var end = Vector2D.Add(start, Vector2D.Multiply(this.Direction, 50));
-
-    //    context.beginPath();
-    //    context.arc(start.X, start.Y, 3, 0, 2 * Math.PI, false);
-    //    context.fillStyle = 'green';
-    //    context.fill();
-
-
-    //    context.beginPath();
-    //    context.moveTo(start.X, start.Y);
-    //    context.lineTo(end.X, end.Y);
-    //    context.stroke();
-    //}
-
-
-
-
-
     var closestDistance = null;
-    for (var angle = -this.RadarRangeFront; angle < this.RadarRangeFront + 1; angle += this.RadarAccuracy) {
-        var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
-        var rayEnd = new Vector2D((Math.cos(radian) * this.RadarRadius) + this.Position.X, (Math.sin(radian) * this.RadarRadius) + this.Position.Y);
-        var ray = new Line(this.Position, rayEnd);
+    for (var index = -this.RadarRangeFront; index < this.RadarRangeFront + 1; index += this.RadarAccuracy) {
+        var radian = 90 * (Math.PI / 180) + Vector2D.Radian(this.Direction);
+
+        var rayStart = new Vector2D((Math.cos(radian) * index) + this.Position.X, (Math.sin(radian) * index) + this.Position.Y);
+        var rayEnd = Vector2D.Add(rayStart, Vector2D.Multiply(this.Direction, this.RadarRadius));
+        var ray = new Line(rayStart, rayEnd);
 
         context.beginPath();
         context.moveTo(ray.Start.X, ray.Start.Y);
 
+        var intersection = Collision.GetIntersection(ray, segments);
         var intersection = Collision.GetIntersection(ray, segments);
         if (intersection != null) {
 
@@ -490,7 +467,7 @@ Vehicle.prototype.RadarLeft = function (segments, context) {
     }
 
     var closestDistance = null;
-    var center = null; 
+    var center = null;
 
     for (var angle = -(this.RadarRangeLeft + this.RadarRangeFront) ; angle < -this.RadarRangeFront; angle += this.RadarAccuracy) {
         var radian = angle * (Math.PI / 180) + Vector2D.Radian(this.Direction);
@@ -518,15 +495,15 @@ Vehicle.prototype.RadarLeft = function (segments, context) {
 
         //Teste
         if (angle == -45) {
-            center = ray.End; 
+            center = ray.End;
         }
         context.stroke();
     }
 
     //Teste
-    if (closestDistance == null){
-        this.Velocity = 1; 
-        this.Target = center; 
+    if (closestDistance == null) {
+        this.Velocity = 1;
+        this.Target = center;
     }
 
     return closestDistance;
@@ -584,13 +561,10 @@ $(document).ready(function () {
         world.FrameEnded = function () { fps.tick(); };
 
         //world.AddFrameElement(new Vehicle('AAA-0003', 500, 80));
-        //world.AddFrameElement(new Vehicle('AAA-0002', 180, 100));
-        
+        world.AddFrameElement(new Vehicle('AAA-0002', 400, 100));
+
         world.AddFrameElement(new Vehicle('AAA-0001', 100, 100, new Vector2D(1000, 100)));
-        world.AddFrameElement(new Vehicle('AAA-0002', 1000, 100, new Vector2D(100, 100)));
-        world.AddFrameElement(new Vehicle('AAA-0003', 200, 200, new Vector2D(200, 400)));
-        world.AddFrameElement(new Vehicle('AAA-0004', 300, 400, new Vector2D(300, 200)));
-        world.AddFrameElement(new Vehicle('AAA-0005', 500, 300, new Vector2D(800, 600)));
+
 
 
     };
