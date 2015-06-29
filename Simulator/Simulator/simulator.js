@@ -178,6 +178,24 @@ Vector2D.Angle = function (vector) {
     var radian = Vector2D.Radian(vector);
     return radian * 180 / Math.PI;
 };
+Vector2D.Lerp = function (goal, current, delta) {
+    if (delta > 1) {
+        return goal;
+    }
+
+    if (delta < 0) {
+        return current;
+    }
+
+    var distance = goal - current;
+    return current + (distance * delta);
+};
+Vector2D.LerpVector = function (vectorGoal, vectorCurrent, delta) {
+    var distance = Vector2D.DistanceVector(vectorGoal, vectorCurrent);
+    return Vector2D.Add(vectorCurrent, Vector2D.Multiply(distance, delta), delta);
+};
+
+
 
 function Line(start, end) {
     this.Start = start;
