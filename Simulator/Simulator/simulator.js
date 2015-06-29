@@ -373,7 +373,6 @@ Vehicle.prototype.Render = function (context) {
     context.drawImage(this.Image, this.RotationOffset - this.SizeHalf.X, -this.SizeHalf.Y);
     context.rotate(-rotation);
     context.translate(-this.Position.X, -this.Position.Y);
-
 };
 Vehicle.prototype.Update = function (delta, context) {
 
@@ -391,7 +390,6 @@ Vehicle.prototype.Update = function (delta, context) {
     } else {
         this.Arrived();
     }
-
 
     var colliderSegments = Collider.GetAllSegments(this);
     var obstacleDistance = null;
@@ -413,7 +411,7 @@ Vehicle.prototype.Update = function (delta, context) {
     //Se atingir a velocidade minima (0.3)
     //Verificar esquerda.
     //Teste - melhor fazer em paralelo (não angulo)
-    obstacleDistance = this.RadarLeft(colliderSegments, context);
+    //obstacleDistance = this.RadarLeft(colliderSegments, context);
 
     //world.Pause();
 
@@ -430,6 +428,31 @@ Vehicle.prototype.RadarFront = function (segments, context) {
     if (segments.length == 0) {
         return;
     }
+
+
+
+
+
+    //for (var i = -30; i < 40; i += 10) {
+    //    var radian = 90 * (Math.PI / 180) + Vector2D.Radian(this.Direction);
+    //    var start = new Vector2D((Math.cos(radian) * i) + this.Position.X, (Math.sin(radian) * i) + this.Position.Y);
+    //    var end = Vector2D.Add(start, Vector2D.Multiply(this.Direction, 50));
+
+    //    context.beginPath();
+    //    context.arc(start.X, start.Y, 3, 0, 2 * Math.PI, false);
+    //    context.fillStyle = 'green';
+    //    context.fill();
+
+
+    //    context.beginPath();
+    //    context.moveTo(start.X, start.Y);
+    //    context.lineTo(end.X, end.Y);
+    //    context.stroke();
+    //}
+
+
+
+
 
     var closestDistance = null;
     for (var angle = -this.RadarRangeFront; angle < this.RadarRangeFront + 1; angle += this.RadarAccuracy) {
@@ -561,11 +584,13 @@ $(document).ready(function () {
         world.FrameEnded = function () { fps.tick(); };
 
         //world.AddFrameElement(new Vehicle('AAA-0003', 500, 80));
-        world.AddFrameElement(new Vehicle('AAA-0002', 500, 100));
+        //world.AddFrameElement(new Vehicle('AAA-0002', 180, 100));
         
         world.AddFrameElement(new Vehicle('AAA-0001', 100, 100, new Vector2D(1000, 100)));
-    
-        
+        world.AddFrameElement(new Vehicle('AAA-0002', 1000, 100, new Vector2D(100, 100)));
+        world.AddFrameElement(new Vehicle('AAA-0003', 200, 200, new Vector2D(200, 400)));
+        world.AddFrameElement(new Vehicle('AAA-0004', 300, 400, new Vector2D(300, 200)));
+        world.AddFrameElement(new Vehicle('AAA-0005', 500, 300, new Vector2D(800, 600)));
 
 
     };
