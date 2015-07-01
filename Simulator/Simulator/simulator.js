@@ -48,7 +48,7 @@ World.prototype.Width = 0;
 World.prototype.ContentElement = null;
 World.prototype.ContextDynamic = null;
 World.prototype.ContextStatic = null;
-World.prototype.FrameElements = [];
+World.prototype.DynamicElements = [];
 World.prototype.Step = 0;
 World.prototype.DeltaTime = 0;
 World.prototype.NowTime = null;
@@ -89,8 +89,8 @@ World.prototype.Frame = function () {
     world.ContextDynamic.clearRect(0, 0, world.Width, world.Height, 'white');
     world.ContextDynamic.save();
 
-    for (var index = 0; index < world.FrameElements.length; index++) {
-        var element = world.FrameElements[index];
+    for (var index = 0; index < world.DynamicElements.length; index++) {
+        var element = world.DynamicElements[index];
         element.Update(world.DeltaTime, world.ContextDynamic);
         element.Render(world.ContextDynamic);
     }
@@ -112,14 +112,17 @@ World.prototype.Start = function () {
 World.prototype.Pause = function () {
     this.Paused = true;
 };
-World.prototype.AddFrameElement = function (element) {
+World.prototype.AddDynamicElement = function (element) {
     element.Debug = this.Debug;
     element.Render(this.ContextDynamic);
-    this.FrameElements.push(element);
+    this.DynamicElements.push(element);
 };
+World.prototype.AddStaticElement = function (element) {
+    element.Render(this.ContextStatic);
+}
 World.prototype.RemoveFrameElement = function (index) {
     if (index > -1) {
-        this.FrameElements.splice(index, 1);
+        this.DynamicElements.splice(index, 1);
     }
 };
 World.prototype.FrameStarted = function () { };
@@ -195,7 +198,6 @@ Vector2D.LerpVector = function (vectorGoal, vectorCurrent, delta) {
     return Vector2D.Add(vectorCurrent, Vector2D.Multiply(distance, delta), delta);
 };
 
-
 function Line(start, end) {
     this.Start = start;
     this.End = end;
@@ -266,8 +268,8 @@ Collision.GetIntersection = function (ray, segments) {
 function Collider() { }
 Collider.GetAllSegments = function (vehicle) {
     var segments = new Array();
-    for (var elIndex = 0; elIndex < world.FrameElements.length; elIndex++) {
-        var element = world.FrameElements[elIndex];
+    for (var elIndex = 0; elIndex < world.DynamicElements.length; elIndex++) {
+        var element = world.DynamicElements[elIndex];
         if (element.Loaded == false) {
             continue;
         }
@@ -313,9 +315,9 @@ Collider.prototype.GetSegments = function () {
     return segments;
 };
 
-function Vehicle(id, x, y, target) {
+function Vehicle(id, position, target) {
     this.Id = id;
-    this.Position = new Vector2D(x, y);
+    this.Position = position;
     this.Direction = new Vector2D(0, 0);
     this.Size = new Vector2D(0, 0);
     this.LoadImage();
@@ -379,7 +381,11 @@ Vehicle.prototype.Update = function (delta, context) {
         return;
     }
 
+
     var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
+
+    
+    
     this.Direction = Vector2D.LerpVector(goalDirection, this.Direction, delta);
     this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
     var distance = Vector2D.Distance(this.Target, this.Position);
@@ -499,6 +505,36 @@ Vehicle.prototype.RadarLeft = function (segments, context) {
 };
 Vehicle.prototype.RadarRight = function (segments, context) { };
 
+function Road(start, end) {
+    this.Start = start;
+    this.End = end;
+    this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Start, this.End));
+    }
+Road.prototype.Start = null;
+Road.prototype.End = null;
+Road.prototype.Direction = null;
+Road.prototype.Width = 32;
+Road.prototype.Render = function (context) {
+
+    context.beginPath();
+    context.moveTo(this.Start.X, this.Start.Y);
+    context.lineTo(this.End.X, this.End.Y);
+    context.strokeStyle = 'rgba(206,206,206,1)';
+    context.lineWidth = this.Width;
+    context.setLineDash([0]);
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo(this.Start.X, this.Start.Y);
+    context.lineTo(this.End.X, this.End.Y);
+    context.strokeStyle = 'rgba(255,255,255,0.5)';
+    context.lineWidth = 2;
+    context.setLineDash([10, 10]);
+    context.stroke();
+
+};
+
+
 
 function Tester(x, y, size) {
     this.Position = new Vector2D(x, y);
@@ -546,22 +582,27 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-        //world.AddFrameElement(new Vehicle('AAA-0003', 500, 80));
-        world.AddFrameElement(new Vehicle('AAA-0002', 400, 100));
-        world.AddFrameElement(new Vehicle('AAA-0003', 450, 100));
-        world.AddFrameElement(new Vehicle('AAA-0004', 500, 100));
-        world.AddFrameElement(new Vehicle('AAA-0005', 550, 100));
-        world.AddFrameElement(new Vehicle('AAA-0006', 600, 100));
-        world.AddFrameElement(new Vehicle('AAA-0007', 650, 100));
-        world.AddFrameElement(new Vehicle('AAA-0008', 700, 100));
-        world.AddFrameElement(new Vehicle('AAA-0009', 750, 100));
-        world.AddFrameElement(new Vehicle('AAA-0010', 800, 100));
-        world.AddFrameElement(new Vehicle('AAA-0011', 850, 100));
-        world.AddFrameElement(new Vehicle('AAA-0012', 900, 100));
-        world.AddFrameElement(new Vehicle('AAA-0013', 950, 100));
+        world.AddStaticElement(new Road(new Vector2D(50, 68), new Vector2D(1150, 68)));
+        world.AddStaticElement(new Road(new Vector2D(50, 100), new Vector2D(1150, 100)));
+
+
+
+        //world.AddDynamicElement(new Vehicle('AAA-0003', 500, 80));
+        world.AddDynamicElement(new Vehicle('AAA-0002', new Vector2D(400, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0003', new Vector2D(450, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0004', new Vector2D(500, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0005', new Vector2D(550, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0006', new Vector2D(600, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0007', new Vector2D(650, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0008', new Vector2D(700, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0009', new Vector2D(750, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0010', new Vector2D(800, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0011', new Vector2D(850, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0012', new Vector2D(900, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0013', new Vector2D(950, 100)));
         
         
-        world.AddFrameElement(new Vehicle('AAA-0001', 100, 100, new Vector2D(1100, 100)));
+        world.AddDynamicElement(new Vehicle('AAA-0001', new Vector2D(100, 100), new Vector2D(1100, 100)));
 
 
 
