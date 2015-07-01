@@ -384,8 +384,8 @@ Vehicle.prototype.Update = function (delta, context) {
 
     var goalDirection = Vector2D.Normalize(Vector2D.Subtract(this.Target, this.Position));
 
-    
-    
+
+
     this.Direction = Vector2D.LerpVector(goalDirection, this.Direction, delta);
     this.Position = Vector2D.Add(this.Position, Vector2D.Multiply(this.Direction, this.Velocity));
     var distance = Vector2D.Distance(this.Target, this.Position);
@@ -494,7 +494,7 @@ Vehicle.prototype.RadarLeft = function (segments, context) {
         context.stroke();
     }
 
-    
+
     //Teste
     if (closestDistance == null) {
         this.Velocity = 1;
@@ -505,15 +505,18 @@ Vehicle.prototype.RadarLeft = function (segments, context) {
 };
 Vehicle.prototype.RadarRight = function (segments, context) { };
 
-function Road(start, end) {
+function Road(start, end, paintingOffset) {
     this.Start = start;
     this.End = end;
+    this.PaintingOffset = paintingOffset;
     this.Direction = Vector2D.Normalize(Vector2D.Subtract(this.Start, this.End));
-    }
+}
 Road.prototype.Start = null;
 Road.prototype.End = null;
 Road.prototype.Direction = null;
 Road.prototype.Width = 32;
+Road.prototype.PaintingOffset = null;
+Road.prototype.PaintingDash = 10; 
 Road.prototype.Render = function (context) {
 
     context.beginPath();
@@ -524,16 +527,22 @@ Road.prototype.Render = function (context) {
     context.setLineDash([0]);
     context.stroke();
 
-    context.beginPath();
-    context.moveTo(this.Start.X, this.Start.Y);
-    context.lineTo(this.End.X, this.End.Y);
-    context.strokeStyle = 'rgba(255,255,255,0.5)';
-    context.lineWidth = 2;
-    context.setLineDash([10, 10]);
-    context.stroke();
+    if (this.PaintingOffset != null) {
+        var radian = 90 * (Math.PI / 180) + Vector2D.Radian(this.Direction);
+        var distance = Vector2D.Distance(this.End, this.Start);
 
+        var paintingStart = new Vector2D((Math.cos(radian) * this.PaintingOffset) + this.Start.X, (Math.sin(radian) * this.PaintingOffset) + this.Start.Y);
+        var paintingEnd = Vector2D.Add(paintingStart, Vector2D.Multiply(this.Direction, -distance));
+
+        context.beginPath();
+        context.moveTo(paintingStart.X, paintingStart.Y);
+        context.lineTo(paintingEnd.X, paintingEnd.Y);
+        context.strokeStyle = 'rgba(255,255,255,1)';
+        context.lineWidth = 2;
+        context.setLineDash([this.PaintingDash]);
+        context.stroke();
+    }
 };
-
 
 
 function Tester(x, y, size) {
@@ -582,7 +591,7 @@ $(document).ready(function () {
         world.FramePaused = function () { fps.pause(); };
         world.FrameEnded = function () { fps.tick(); };
 
-        world.AddStaticElement(new Road(new Vector2D(50, 68), new Vector2D(1150, 68)));
+        world.AddStaticElement(new Road(new Vector2D(50, 68), new Vector2D(1150, 68), -15));
         world.AddStaticElement(new Road(new Vector2D(50, 100), new Vector2D(1150, 100)));
 
 
@@ -600,8 +609,8 @@ $(document).ready(function () {
         world.AddDynamicElement(new Vehicle('AAA-0011', new Vector2D(850, 100)));
         world.AddDynamicElement(new Vehicle('AAA-0012', new Vector2D(900, 100)));
         world.AddDynamicElement(new Vehicle('AAA-0013', new Vector2D(950, 100)));
-        
-        
+
+
         world.AddDynamicElement(new Vehicle('AAA-0001', new Vector2D(100, 100), new Vector2D(1100, 100)));
 
 
